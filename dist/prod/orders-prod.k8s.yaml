@@ -1,0 +1,266 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-prod-configmap-c89beac1
+  namespace: shop
+data:
+  FEATURE_X: "true"
+  LOG_LEVEL: warn
+immutable: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: orders-prod-secret-c86be4fa
+  namespace: shop
+immutable: false
+stringData:
+  API_KEY: dummy-api-key
+  DB_PASSWORD: dummy-password
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orders-prod-serviceaccount-c88f1687
+  namespace: shop
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cdk8s
+    app.kubernetes.io/name: orders
+  name: orders-prod-deployment-c8fdc26e
+  namespace: shop
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/managed-by: cdk8s
+        app.kubernetes.io/name: orders
+        cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: orders-prod-configmap-c89beac1
+            - secretRef:
+                name: orders-prod-secret-c86be4fa
+          image: registry.example.com/shop/orders:1.0.0
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+          name: orders
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          startupProbe:
+            failureThreshold: 3
+            tcpSocket:
+              port: 8080
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: Always
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccountName: orders-prod-serviceaccount-c88f1687
+      setHostnameAsFQDN: false
+      shareProcessNamespace: false
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - emptyDir: {}
+          name: tmp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders
+  namespace: shop
+spec:
+  externalIPs: []
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: orders-prod-poddisruptionbudget-c8bf1a5f
+  namespace: shop
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orders-prod-horizontalpodautoscaler-c8315342
+  namespace: shop
+spec:
+  behavior:
+    scaleDown:
+      policies:
+        - periodSeconds: 300
+          type: Pods
+          value: 4
+      selectPolicy: Max
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      policies:
+        - periodSeconds: 60
+          type: Pods
+          value: 4
+        - periodSeconds: 60
+          type: Percent
+          value: 200
+      selectPolicy: Max
+      stabilizationWindowSeconds: 0
+  maxReplicas: 20
+  metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 70
+          type: Utilization
+      type: Resource
+  minReplicas: 4
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orders-prod-deployment-c8fdc26e
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orders-prod-networkpolicy-deny-c88e5466
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orders-prod-networkpolicy-allow-c89b3815
+  namespace: shop
+spec:
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8080
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      cdk8s.io/metadata.addr: orders-prod-Deployment-c83bf36f
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: orders-prod-tlssecret-c8334a4b
+  namespace: shop
+immutable: false
+stringData:
+  tls.crt: dummy-cert
+  tls.key: dummy-key
+type: kubernetes.io/tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orders-prod-ingress-c80b6b9e
+  namespace: shop
+spec:
+  rules:
+    - host: orders.example.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: orders
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - orders.example.com
+      secretName: orders-prod-tlssecret-c8334a4b

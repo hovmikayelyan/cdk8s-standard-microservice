@@ -1,0 +1,829 @@
+# serializer version: 1
+# name: test_manifests_match_golden_snapshot[dev]
+  list([
+    dict({
+      'apiVersion': 'v1',
+      'data': dict({
+        'FEATURE_X': 'false',
+        'LOG_LEVEL': 'info',
+      }),
+      'immutable': False,
+      'kind': 'ConfigMap',
+      'metadata': dict({
+        'name': 'orders-dev-configmap-c8ec0f34',
+        'namespace': 'shop',
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'immutable': False,
+      'kind': 'Secret',
+      'metadata': dict({
+        'name': 'orders-dev-secret-c8facceb',
+        'namespace': 'shop',
+      }),
+      'stringData': dict({
+        'API_KEY': 'dummy-api-key',
+        'DB_PASSWORD': 'dummy-password',
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'automountServiceAccountToken': False,
+      'kind': 'ServiceAccount',
+      'metadata': dict({
+        'name': 'orders-dev-serviceaccount-c83f52dd',
+        'namespace': 'shop',
+      }),
+    }),
+    dict({
+      'apiVersion': 'apps/v1',
+      'kind': 'Deployment',
+      'metadata': dict({
+        'labels': dict({
+          'app.kubernetes.io/managed-by': 'cdk8s',
+          'app.kubernetes.io/name': 'orders',
+        }),
+        'name': 'orders-dev-deployment-c82d8a13',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'minReadySeconds': 0,
+        'progressDeadlineSeconds': 600,
+        'revisionHistoryLimit': 10,
+        'selector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+          }),
+        }),
+        'strategy': dict({
+          'rollingUpdate': dict({
+            'maxSurge': '25%',
+            'maxUnavailable': '25%',
+          }),
+          'type': 'RollingUpdate',
+        }),
+        'template': dict({
+          'metadata': dict({
+            'labels': dict({
+              'app.kubernetes.io/managed-by': 'cdk8s',
+              'app.kubernetes.io/name': 'orders',
+              'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+            }),
+          }),
+          'spec': dict({
+            'automountServiceAccountToken': False,
+            'containers': list([
+              dict({
+                'envFrom': list([
+                  dict({
+                    'configMapRef': dict({
+                      'name': 'orders-dev-configmap-c8ec0f34',
+                    }),
+                  }),
+                  dict({
+                    'secretRef': dict({
+                      'name': 'orders-dev-secret-c8facceb',
+                    }),
+                  }),
+                ]),
+                'image': 'registry.example.com/shop/orders:1.0.0',
+                'imagePullPolicy': 'Always',
+                'livenessProbe': dict({
+                  'failureThreshold': 3,
+                  'httpGet': dict({
+                    'path': '/healthz',
+                    'port': 8080,
+                    'scheme': 'HTTP',
+                  }),
+                  'initialDelaySeconds': 10,
+                  'periodSeconds': 10,
+                  'timeoutSeconds': 2,
+                }),
+                'name': 'orders',
+                'ports': list([
+                  dict({
+                    'containerPort': 8080,
+                  }),
+                ]),
+                'readinessProbe': dict({
+                  'failureThreshold': 3,
+                  'httpGet': dict({
+                    'path': '/readyz',
+                    'port': 8080,
+                    'scheme': 'HTTP',
+                  }),
+                  'initialDelaySeconds': 5,
+                  'periodSeconds': 5,
+                  'timeoutSeconds': 2,
+                }),
+                'resources': dict({
+                  'limits': dict({
+                    'cpu': '500m',
+                    'memory': '256Mi',
+                  }),
+                  'requests': dict({
+                    'cpu': '100m',
+                    'memory': '128Mi',
+                  }),
+                }),
+                'securityContext': dict({
+                  'allowPrivilegeEscalation': False,
+                  'capabilities': dict({
+                    'drop': list([
+                      'ALL',
+                    ]),
+                  }),
+                  'privileged': False,
+                  'readOnlyRootFilesystem': True,
+                  'runAsGroup': 10001,
+                  'runAsNonRoot': True,
+                  'runAsUser': 10001,
+                  'seccompProfile': dict({
+                    'type': 'RuntimeDefault',
+                  }),
+                }),
+                'startupProbe': dict({
+                  'failureThreshold': 3,
+                  'tcpSocket': dict({
+                    'port': 8080,
+                  }),
+                }),
+                'volumeMounts': list([
+                  dict({
+                    'mountPath': '/tmp',
+                    'name': 'tmp',
+                  }),
+                ]),
+              }),
+            ]),
+            'dnsPolicy': 'ClusterFirst',
+            'hostNetwork': False,
+            'restartPolicy': 'Always',
+            'securityContext': dict({
+              'fsGroup': 10001,
+              'fsGroupChangePolicy': 'Always',
+              'runAsGroup': 10001,
+              'runAsNonRoot': True,
+              'runAsUser': 10001,
+            }),
+            'serviceAccountName': 'orders-dev-serviceaccount-c83f52dd',
+            'setHostnameAsFQDN': False,
+            'shareProcessNamespace': False,
+            'terminationGracePeriodSeconds': 30,
+            'volumes': list([
+              dict({
+                'emptyDir': dict({
+                }),
+                'name': 'tmp',
+              }),
+            ]),
+          }),
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'kind': 'Service',
+      'metadata': dict({
+        'name': 'orders',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'externalIPs': list([
+        ]),
+        'ports': list([
+          dict({
+            'port': 80,
+            'targetPort': 8080,
+          }),
+        ]),
+        'selector': dict({
+          'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+        }),
+        'type': 'ClusterIP',
+      }),
+    }),
+    dict({
+      'apiVersion': 'policy/v1',
+      'kind': 'PodDisruptionBudget',
+      'metadata': dict({
+        'name': 'orders-dev-poddisruptionbudget-c87a3656',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'minAvailable': 1,
+        'selector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+          }),
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'autoscaling/v2',
+      'kind': 'HorizontalPodAutoscaler',
+      'metadata': dict({
+        'name': 'orders-dev-horizontalpodautoscaler-c8fe9f10',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'behavior': dict({
+          'scaleDown': dict({
+            'policies': list([
+              dict({
+                'periodSeconds': 300,
+                'type': 'Pods',
+                'value': 2,
+              }),
+            ]),
+            'selectPolicy': 'Max',
+            'stabilizationWindowSeconds': 300,
+          }),
+          'scaleUp': dict({
+            'policies': list([
+              dict({
+                'periodSeconds': 60,
+                'type': 'Pods',
+                'value': 4,
+              }),
+              dict({
+                'periodSeconds': 60,
+                'type': 'Percent',
+                'value': 200,
+              }),
+            ]),
+            'selectPolicy': 'Max',
+            'stabilizationWindowSeconds': 0,
+          }),
+        }),
+        'maxReplicas': 5,
+        'metrics': list([
+          dict({
+            'resource': dict({
+              'name': 'cpu',
+              'target': dict({
+                'averageUtilization': 70,
+                'type': 'Utilization',
+              }),
+            }),
+            'type': 'Resource',
+          }),
+        ]),
+        'minReplicas': 2,
+        'scaleTargetRef': dict({
+          'apiVersion': 'apps/v1',
+          'kind': 'Deployment',
+          'name': 'orders-dev-deployment-c82d8a13',
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'NetworkPolicy',
+      'metadata': dict({
+        'name': 'orders-dev-networkpolicy-deny-c8a0cce0',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'podSelector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+          }),
+        }),
+        'policyTypes': list([
+          'Ingress',
+          'Egress',
+        ]),
+      }),
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'NetworkPolicy',
+      'metadata': dict({
+        'name': 'orders-dev-networkpolicy-allow-c8a63fe0',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'egress': list([
+          dict({
+            'ports': list([
+              dict({
+                'port': 53,
+                'protocol': 'UDP',
+              }),
+              dict({
+                'port': 53,
+                'protocol': 'TCP',
+              }),
+            ]),
+            'to': list([
+              dict({
+                'namespaceSelector': dict({
+                  'matchLabels': dict({
+                    'kubernetes.io/metadata.name': 'kube-system',
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        ]),
+        'ingress': list([
+          dict({
+            'from': list([
+              dict({
+                'namespaceSelector': dict({
+                  'matchLabels': dict({
+                    'kubernetes.io/metadata.name': 'ingress-nginx',
+                  }),
+                }),
+              }),
+            ]),
+            'ports': list([
+              dict({
+                'port': 8080,
+                'protocol': 'TCP',
+              }),
+            ]),
+          }),
+        ]),
+        'podSelector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-dev-Deployment-c812678f',
+          }),
+        }),
+        'policyTypes': list([
+          'Ingress',
+          'Egress',
+        ]),
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'immutable': False,
+      'kind': 'Secret',
+      'metadata': dict({
+        'name': 'orders-dev-tlssecret-c8e46ec6',
+        'namespace': 'shop',
+      }),
+      'stringData': dict({
+        'tls.crt': 'dummy-cert',
+        'tls.key': 'dummy-key',
+      }),
+      'type': 'kubernetes.io/tls',
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'Ingress',
+      'metadata': dict({
+        'name': 'orders-dev-ingress-c8170a7f',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'rules': list([
+          dict({
+            'host': 'orders.example.com',
+            'http': dict({
+              'paths': list([
+                dict({
+                  'backend': dict({
+                    'service': dict({
+                      'name': 'orders',
+                      'port': dict({
+                        'number': 80,
+                      }),
+                    }),
+                  }),
+                  'path': '/',
+                  'pathType': 'Prefix',
+                }),
+              ]),
+            }),
+          }),
+        ]),
+        'tls': list([
+          dict({
+            'hosts': list([
+              'orders.example.com',
+            ]),
+            'secretName': 'orders-dev-tlssecret-c8e46ec6',
+          }),
+        ]),
+      }),
+    }),
+  ])
+# ---
+# name: test_manifests_match_golden_snapshot[prod]
+  list([
+    dict({
+      'apiVersion': 'v1',
+      'data': dict({
+        'FEATURE_X': 'true',
+        'LOG_LEVEL': 'warn',
+      }),
+      'immutable': False,
+      'kind': 'ConfigMap',
+      'metadata': dict({
+        'name': 'orders-prod-configmap-c89beac1',
+        'namespace': 'shop',
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'immutable': False,
+      'kind': 'Secret',
+      'metadata': dict({
+        'name': 'orders-prod-secret-c86be4fa',
+        'namespace': 'shop',
+      }),
+      'stringData': dict({
+        'API_KEY': 'dummy-api-key',
+        'DB_PASSWORD': 'dummy-password',
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'automountServiceAccountToken': False,
+      'kind': 'ServiceAccount',
+      'metadata': dict({
+        'name': 'orders-prod-serviceaccount-c88f1687',
+        'namespace': 'shop',
+      }),
+    }),
+    dict({
+      'apiVersion': 'apps/v1',
+      'kind': 'Deployment',
+      'metadata': dict({
+        'labels': dict({
+          'app.kubernetes.io/managed-by': 'cdk8s',
+          'app.kubernetes.io/name': 'orders',
+        }),
+        'name': 'orders-prod-deployment-c8fdc26e',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'minReadySeconds': 0,
+        'progressDeadlineSeconds': 600,
+        'revisionHistoryLimit': 10,
+        'selector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+          }),
+        }),
+        'strategy': dict({
+          'rollingUpdate': dict({
+            'maxSurge': '25%',
+            'maxUnavailable': '25%',
+          }),
+          'type': 'RollingUpdate',
+        }),
+        'template': dict({
+          'metadata': dict({
+            'labels': dict({
+              'app.kubernetes.io/managed-by': 'cdk8s',
+              'app.kubernetes.io/name': 'orders',
+              'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+            }),
+          }),
+          'spec': dict({
+            'automountServiceAccountToken': False,
+            'containers': list([
+              dict({
+                'envFrom': list([
+                  dict({
+                    'configMapRef': dict({
+                      'name': 'orders-prod-configmap-c89beac1',
+                    }),
+                  }),
+                  dict({
+                    'secretRef': dict({
+                      'name': 'orders-prod-secret-c86be4fa',
+                    }),
+                  }),
+                ]),
+                'image': 'registry.example.com/shop/orders:1.0.0',
+                'imagePullPolicy': 'Always',
+                'livenessProbe': dict({
+                  'failureThreshold': 3,
+                  'httpGet': dict({
+                    'path': '/healthz',
+                    'port': 8080,
+                    'scheme': 'HTTP',
+                  }),
+                  'initialDelaySeconds': 10,
+                  'periodSeconds': 10,
+                  'timeoutSeconds': 2,
+                }),
+                'name': 'orders',
+                'ports': list([
+                  dict({
+                    'containerPort': 8080,
+                  }),
+                ]),
+                'readinessProbe': dict({
+                  'failureThreshold': 3,
+                  'httpGet': dict({
+                    'path': '/readyz',
+                    'port': 8080,
+                    'scheme': 'HTTP',
+                  }),
+                  'initialDelaySeconds': 5,
+                  'periodSeconds': 5,
+                  'timeoutSeconds': 2,
+                }),
+                'resources': dict({
+                  'limits': dict({
+                    'cpu': '1000m',
+                    'memory': '1024Mi',
+                  }),
+                  'requests': dict({
+                    'cpu': '500m',
+                    'memory': '512Mi',
+                  }),
+                }),
+                'securityContext': dict({
+                  'allowPrivilegeEscalation': False,
+                  'capabilities': dict({
+                    'drop': list([
+                      'ALL',
+                    ]),
+                  }),
+                  'privileged': False,
+                  'readOnlyRootFilesystem': True,
+                  'runAsGroup': 10001,
+                  'runAsNonRoot': True,
+                  'runAsUser': 10001,
+                  'seccompProfile': dict({
+                    'type': 'RuntimeDefault',
+                  }),
+                }),
+                'startupProbe': dict({
+                  'failureThreshold': 3,
+                  'tcpSocket': dict({
+                    'port': 8080,
+                  }),
+                }),
+                'volumeMounts': list([
+                  dict({
+                    'mountPath': '/tmp',
+                    'name': 'tmp',
+                  }),
+                ]),
+              }),
+            ]),
+            'dnsPolicy': 'ClusterFirst',
+            'hostNetwork': False,
+            'restartPolicy': 'Always',
+            'securityContext': dict({
+              'fsGroup': 10001,
+              'fsGroupChangePolicy': 'Always',
+              'runAsGroup': 10001,
+              'runAsNonRoot': True,
+              'runAsUser': 10001,
+            }),
+            'serviceAccountName': 'orders-prod-serviceaccount-c88f1687',
+            'setHostnameAsFQDN': False,
+            'shareProcessNamespace': False,
+            'terminationGracePeriodSeconds': 30,
+            'volumes': list([
+              dict({
+                'emptyDir': dict({
+                }),
+                'name': 'tmp',
+              }),
+            ]),
+          }),
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'kind': 'Service',
+      'metadata': dict({
+        'name': 'orders',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'externalIPs': list([
+        ]),
+        'ports': list([
+          dict({
+            'port': 80,
+            'targetPort': 8080,
+          }),
+        ]),
+        'selector': dict({
+          'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+        }),
+        'type': 'ClusterIP',
+      }),
+    }),
+    dict({
+      'apiVersion': 'policy/v1',
+      'kind': 'PodDisruptionBudget',
+      'metadata': dict({
+        'name': 'orders-prod-poddisruptionbudget-c8bf1a5f',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'minAvailable': 1,
+        'selector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+          }),
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'autoscaling/v2',
+      'kind': 'HorizontalPodAutoscaler',
+      'metadata': dict({
+        'name': 'orders-prod-horizontalpodautoscaler-c8315342',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'behavior': dict({
+          'scaleDown': dict({
+            'policies': list([
+              dict({
+                'periodSeconds': 300,
+                'type': 'Pods',
+                'value': 4,
+              }),
+            ]),
+            'selectPolicy': 'Max',
+            'stabilizationWindowSeconds': 300,
+          }),
+          'scaleUp': dict({
+            'policies': list([
+              dict({
+                'periodSeconds': 60,
+                'type': 'Pods',
+                'value': 4,
+              }),
+              dict({
+                'periodSeconds': 60,
+                'type': 'Percent',
+                'value': 200,
+              }),
+            ]),
+            'selectPolicy': 'Max',
+            'stabilizationWindowSeconds': 0,
+          }),
+        }),
+        'maxReplicas': 20,
+        'metrics': list([
+          dict({
+            'resource': dict({
+              'name': 'cpu',
+              'target': dict({
+                'averageUtilization': 70,
+                'type': 'Utilization',
+              }),
+            }),
+            'type': 'Resource',
+          }),
+        ]),
+        'minReplicas': 4,
+        'scaleTargetRef': dict({
+          'apiVersion': 'apps/v1',
+          'kind': 'Deployment',
+          'name': 'orders-prod-deployment-c8fdc26e',
+        }),
+      }),
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'NetworkPolicy',
+      'metadata': dict({
+        'name': 'orders-prod-networkpolicy-deny-c88e5466',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'podSelector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+          }),
+        }),
+        'policyTypes': list([
+          'Ingress',
+          'Egress',
+        ]),
+      }),
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'NetworkPolicy',
+      'metadata': dict({
+        'name': 'orders-prod-networkpolicy-allow-c89b3815',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'egress': list([
+          dict({
+            'ports': list([
+              dict({
+                'port': 53,
+                'protocol': 'UDP',
+              }),
+              dict({
+                'port': 53,
+                'protocol': 'TCP',
+              }),
+            ]),
+            'to': list([
+              dict({
+                'namespaceSelector': dict({
+                  'matchLabels': dict({
+                    'kubernetes.io/metadata.name': 'kube-system',
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        ]),
+        'ingress': list([
+          dict({
+            'from': list([
+              dict({
+                'namespaceSelector': dict({
+                  'matchLabels': dict({
+                    'kubernetes.io/metadata.name': 'ingress-nginx',
+                  }),
+                }),
+              }),
+            ]),
+            'ports': list([
+              dict({
+                'port': 8080,
+                'protocol': 'TCP',
+              }),
+            ]),
+          }),
+        ]),
+        'podSelector': dict({
+          'matchLabels': dict({
+            'cdk8s.io/metadata.addr': 'orders-prod-Deployment-c83bf36f',
+          }),
+        }),
+        'policyTypes': list([
+          'Ingress',
+          'Egress',
+        ]),
+      }),
+    }),
+    dict({
+      'apiVersion': 'v1',
+      'immutable': False,
+      'kind': 'Secret',
+      'metadata': dict({
+        'name': 'orders-prod-tlssecret-c8334a4b',
+        'namespace': 'shop',
+      }),
+      'stringData': dict({
+        'tls.crt': 'dummy-cert',
+        'tls.key': 'dummy-key',
+      }),
+      'type': 'kubernetes.io/tls',
+    }),
+    dict({
+      'apiVersion': 'networking.k8s.io/v1',
+      'kind': 'Ingress',
+      'metadata': dict({
+        'name': 'orders-prod-ingress-c80b6b9e',
+        'namespace': 'shop',
+      }),
+      'spec': dict({
+        'rules': list([
+          dict({
+            'host': 'orders.example.com',
+            'http': dict({
+              'paths': list([
+                dict({
+                  'backend': dict({
+                    'service': dict({
+                      'name': 'orders',
+                      'port': dict({
+                        'number': 80,
+                      }),
+                    }),
+                  }),
+                  'path': '/',
+                  'pathType': 'Prefix',
+                }),
+              ]),
+            }),
+          }),
+        ]),
+        'tls': list([
+          dict({
+            'hosts': list([
+              'orders.example.com',
+            ]),
+            'secretName': 'orders-prod-tlssecret-c8334a4b',
+          }),
+        ]),
+      }),
+    }),
+  ])
+# ---
